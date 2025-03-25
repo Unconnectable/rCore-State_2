@@ -1,0 +1,26 @@
+# 编译生成的文件和目录
+/target/
+**/*.rs.bk
+
+# Cargo 的构建缓存和锁文件（通常不忽略 Cargo.lock，特别是对于二进制项目）
+Cargo.lock
+
+# 调试信息
+*.o
+*.d
+*.so
+*.dylib
+*.dll
+*.a
+
+# 本地 IDE 或编辑器配置文件
+.vscode/
+.idea/
+# VS Code 工作区文件
+*.code-workspace
+# Rust 的 rustfmt 和 clippy 的本地配置文件
+rustfmt.toml
+.clippy.toml
+
+# 环境文件（如.env）
+.env
