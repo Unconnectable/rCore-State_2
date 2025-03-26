@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# 定义要替换的字符映射
+# 定义要替换的字符映射（中文全角 → 英文半角）
 declare -A replace_map=(
     ['（']='('
     ['）']=')'
     ['，']=','
     ['。']='.'
     ['；']=';'
+    ['：']=':'
 )
 
 # 初始化计数器
@@ -16,11 +17,24 @@ declare -A count_stats=(
     ['， → ,' ]=0
     ['。 → .' ]=0
     ['； → ;' ]=0
+    ['： → :' ]=0
 )
 
-# 递归查找所有文本文件（排除二进制文件）
+# 获取当前脚本名称
+current_script_name=$(basename "$0")
+
+# 递归查找所有文本文件(排除二进制文件和指定文件)
 while IFS= read -r -d '' file; do
-    # 检查是否为文本文件（避免修改二进制文件）
+    # 获取文件名（不含路径）
+    filename=$(basename "$file")
+    
+    # 检查是否为需要排除的文件
+    if [[ "$filename" == "$current_script_name" || "$filename" == "char_replace.ps1" ]]; then
+        echo "跳过排除文件: $file"
+        continue
+    fi
+
+    # 检查是否为文本文件(避免修改二进制文件)
     if file "$file" | grep -q 'text'; then
         echo "处理文件: $file"
         temp_file=$(mktemp)

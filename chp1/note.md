@@ -38,11 +38,11 @@ $ rust-objdump -S target/riscv64gc-unknown-none-elf/debug/os
 
 ### **1. ELF 文件**
 
-ELF 文件主要分为三类：
+ELF 文件主要分为三类:
 
 1. **可执行文件(Executable)**
    - 可直接运行的程序(如 `/bin/ls`).
-   - 示例：你的 `os` 二进制文件.
+   - 示例:你的 `os` 二进制文件.
 2. **共享库(Shared Object)**
    - 动态链接库(如 `.so`、`.dll`).
 3. **目标文件(Relocatable)**
@@ -52,7 +52,7 @@ ELF 文件主要分为三类：
 
 ### **2. ELF 文件结构**
 
-ELF 文件由 **头部 + 节(Sections)+ 段(Segments)** 组成：
+ELF 文件由 **头部 + 节(Sections)+ 段(Segments)** 组成:
 
 | 组成部分                 | 作用                                                         |
 | :----------------------- | :----------------------------------------------------------- |
@@ -61,7 +61,7 @@ ELF 文件由 **头部 + 节(Sections)+ 段(Segments)** 组成：
 | **Section Headers(节)** | 包含代码、数据、符号表等(供链接器使用).                    |
 
 ## 1.5
-用 QEMU 软件 qemu-system-riscv64 来模拟 RISC-V 64 计算机.加载内核程序的命令如下：
+用 QEMU 软件 qemu-system-riscv64 来模拟 RISC-V 64 计算机.加载内核程序的命令如下:
 
 ```sh
 qemu-system-riscv64 \
