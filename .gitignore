@@ -2,7 +2,7 @@
 /target/
 **/*.rs.bk
 
-# Cargo 的构建缓存和锁文件（通常不忽略 Cargo.lock，特别是对于二进制项目）
+# Cargo 的构建缓存和锁文件(通常不忽略 Cargo.lock,特别是对于二进制项目)
 Cargo.lock
 
 # 调试信息
@@ -22,5 +22,5 @@ Cargo.lock
 rustfmt.toml
 .clippy.toml
 
-# 环境文件（如.env）
+# 环境文件(如.env)
 .env
