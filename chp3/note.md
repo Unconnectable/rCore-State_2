@@ -163,3 +163,13 @@ pub enum TaskStatus {
 
 
 
+# 基于`RISCV`的汇编
+
+## Lec1
+
+格式形如`[label:] [opertion] [comment]`
+
+
+
+`opertion`的类型: 指令,伪指令,指示,marco
+
