@@ -1,4 +1,65 @@
-以下是需要补全的代码任务
+## 实现通关的补全的代码结构
+
+```rust
+// os/src/mm/memory_set
+
+impl MemorySet {
+    //body 到append_to函数截至都是自带的函数
+    //新增了以下三个函数
+    pub fn mmap(&mut self, start: VirtPageNum, end: VirtPageNum, flag: MapPermission) {}
+    pub fn munmap(&mut self, start: VirtPageNum, end: VirtPageNum) -> Result<(), ()> {}
+    pub fn is_overlap(&self, start: VirtPageNum, end: VirtPageNum) -> bool {}
+}
+
+// os/src/task/task.rs
+pub struct TaskControlBlock {
+    //body
+    /// Program break
+    pub program_brk: usize,
+
+    /// 新增了syscall_times数组
+    pub syscall_times: [usize; MAX_SYSCALL_NUM],
+}
+
+impl TaskControlBlock {
+    //原来的函数
+    pub fn new(elf_data: &[u8], app_id: usize) -> Self {
+        //body1 未修改
+
+        let task_control_block = Self {
+            program_brk: user_sp, ////定位到这里
+            //在new里面初始化syscall_times
+            syscall_times: [0; MAX_SYSCALL_NUM],
+        };
+
+        //body2 未修改
+    }
+}
+
+// os/src/task/mod.rs 修改的内容
+/// mmap syscall
+pub fn mmap(start: usize, len: usize, port: usize) -> isize {}
+
+/// munmap syscall
+pub fn munmap(start: usize, len: usize) -> isize {}
+
+/// systrace
+pub fn task_trace(_trace_request: usize, _id: usize, _data: usize) -> isize {
+    trace!("kernel: sys_trace");
+}
+
+```
+
+
+$$
+\text{可用页数} = \left\lfloor \frac{\text{MEMORY\_END}}{\text{PAGE\_SIZE}} \right\rfloor - 
+                 \left\lceil \frac{\text{ekernel}}{\text{PAGE\_SIZE}} \right\rceil
+$$
+
+
+## 以下是需要补全的代码任务
+
+
 
 ```rust
 // os/src/syscall/process.rs

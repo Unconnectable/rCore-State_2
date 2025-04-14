@@ -11,7 +11,7 @@
 pub fn sys_mmap(_start: usize, _len: usize, _port: usize) -> isize {
     trace!("kernel: sys_mmap NOT IMPLEMENTED YET!");
      const PAGE_SIZE: usize = 4096;
-    if _start % PAGE_SIZE != 0 {
+    if _start % PAGE_SIZE != 0 {d  
         return -1;
     }
     if (_port & !0x7) != 0 || (_port & 0x7) == 0 {
@@ -198,13 +198,104 @@ pub fn munmap(start: usize, len: usize) -> isize {
 
 
 
+$$
+a_{17}a_{16}..a_0\\
+校验公式，\sum_{}^{} a_i \times 2_i \mod 11,a_i =每一位的数字
+$$
 
 
-```sql
-SELECT * FROM STUDENT WHERE lower  NAME (like '%a%')
+```cpp
+你有
+n
+个砝码，第
+i
+个砝码重量为
+a
+i
+。你有一架秤，你只能在同一边放上砝码，现在你想这架秤最小的称不出的重量是多少？
 
+比如，有
+3
+个砝码，重量分别为
+1
+,
+2
+,
+4
+，那么第一个你没法称出的重量是
+8
+。
+  
+ 题解
+  题意
+n
+个砝码，只能放天平的一边，问最小的无法称重的重量。
+思路
+如果你现在能称
+[l,r]
+，新加入的砝码重量为
+a
+,显然，必须使用这颗砝码能称的重量区间为
+[l+a,r+a]
+。
+这时，如果
+r≥l+a−1
+,那么称重连续区间就可以扩展成
+[l,r+a]
+。显然，初始区间为
+[0,0]
+；然后按砝码升序（题目已经给了，不需要排序）计算即可。
+时间复杂度为
+O(n)
+。
+  
+  检查我的代码的错误
+  #include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <functional>
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <string>
 
-INSERT from instructor
+#define lld long long // long long 的printf 占位符是lld
+#define ENDL '\n'     // 将 endl 替换为 \n 取消缓冲区
 
+const long long MAX_ = 1e9;
+
+using std::cin;
+using std::cout;
+using std::string;
+int a[10909];
+void solve() {
+  memset(a, 0, sizeof(a));
+  int n;
+  cin >> n;
+
+  int x;
+  int L = 0, R = 0;
+  for (int i = 0; i < n; ++i)
+    cin >> a[i];
+  bool tag = 0;
+  for (int i = 0; i < n; ++i) {
+    if (L + a[i] - 1 <= R) {
+      L = L;
+      R = R + a[i];
+    } else {
+      tag = 1;
+      cout << L + 1 << ENDL;
+      return;
+    }
+  }
+  cout << R + 1 << ENDL;
+}
+int main() {
+  int T = 1;
+  cin >> T;
+  while (T--) {
+    solve();
+  }
+}
 ```
 
