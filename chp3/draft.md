@@ -629,7 +629,7 @@ lazy_static = { default-features = false, features = [
 log = "0.4"
 strum = { default-features = false, features = ["derive"], version = "0.27" }
 
-当我把buddy_system改为0.11时，也就是以下这样
+当我把buddy_system改为0.11时,也就是以下这样
 [dependencies]
 buddy_system_allocator = "0.11"
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] } 其他没有修改

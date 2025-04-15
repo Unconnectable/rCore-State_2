@@ -88,28 +88,28 @@ pub fn sys_yield() -> isize {
     0
 }
 
-/// 你的任务：获取时间（秒和微秒）
-/// 提示：你可能需要通过虚拟内存管理重新实现它
-/// 提示：如果 [`TimeVal`] 结构被跨页分割会怎样？
+/// 你的任务:获取时间(秒和微秒)
+/// 提示:你可能需要通过虚拟内存管理重新实现它
+/// 提示:如果 [`TimeVal`] 结构被跨页分割会怎样？
 pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
     trace!("kernel: sys_get_time");
     -1
 }
 
 /// TODO: 完成 sys_trace 以通过测试用例
-/// 提示：你可能需要通过虚拟内存管理重新实现它
+/// 提示:你可能需要通过虚拟内存管理重新实现它
 pub fn sys_trace(_trace_request: usize, _id: usize, _data: usize) -> isize {
     trace!("kernel: sys_trace");
     -1
 }
 
-// 你的任务：实现 mmap
+// 你的任务:实现 mmap
 pub fn sys_mmap(_start: usize, _len: usize, _port: usize) -> isize {
     trace!("kernel: sys_mmap 尚未实现!");
     -1
 }
 
-// 你的任务：实现 munmap
+// 你的任务:实现 munmap
 pub fn sys_munmap(_start: usize, _len: usize) -> isize {
     trace!("kernel: sys_munmap 尚未实现!");
     -1
@@ -172,7 +172,7 @@ pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
             return -1;
         }
 
-        // 获取当前时间（以微秒为单位）
+        // 获取当前时间(以微秒为单位)
         let time_ = get_time_us();
 
         // 将微秒转换为秒和微秒
@@ -210,7 +210,7 @@ pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
 pub fn sys_trace(_trace_request: usize, _id: usize, _data: usize) -> isize {
     trace!("kernel: sys_trace");
     // 获取当前任务的用户态token
-    let token = current_user_token(); //satp 寄存器的值，包含页表物理地址和模式信息
+    let token = current_user_token(); //satp 寄存器的值,包含页表物理地址和模式信息
     let _page_table = PageTable::from_token(token); //临时PageTable
 
     match _trace_request {
