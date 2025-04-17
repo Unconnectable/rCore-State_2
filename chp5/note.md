@@ -2,7 +2,7 @@
 
 改动的代码文件和注释
 
-## 5.1
+# 5.1
 
 `wait`用于等待任意一个子进程,`waitpid`用于等待特定子进程
 
@@ -95,7 +95,7 @@ pub fn main() -> i32 {
 }
 ```
 
-## 5.2
+# 5.2
 
 `loader.rs` 中,我们用一个全局可见的 _只读_ 向量 `APP_NAMES` 来按照顺序将所有应用的名字保存在内存中
 
@@ -120,7 +120,7 @@ pub fn list_apps() {
 }
 ```
 
-### 进程标识符 `PidAllocator`
+## 进程标识符 `PidAllocator`
 
 ```rust
 pub struct RecycleAllocator {
@@ -182,7 +182,7 @@ impl Drop for PidHandle {
 
 ---
 
-### 内核栈 `KernelStack`
+## 内核栈 `KernelStack`
 
 在内核栈 `KernelStack` 中保存着它所属进程的 PID :
 
@@ -249,7 +249,7 @@ impl KernelStack {
 
 ---
 
-### 进程控制块 `TaskControlBlock`
+## 进程控制块 `TaskControlBlock`
 
 `TaskControlBlockInner` 提供的方法
 
@@ -291,7 +291,7 @@ impl TaskControlBlock {
 }
 ```
 
-### 任务管理器 `TaskManager`
+## 任务管理器 `TaskManager`
 
 任务管理器的结构:双端队列
 
@@ -340,7 +340,7 @@ pub fn fetch_task() -> Option<Arc<TaskControlBlock>> {
 
 ```
 
-### 处理器管理结构
+## 处理器管理结构
 
 处理器管理结构 `Processor` 负责维护从任务管理器 `TaskManager` 分离出去的那部分 CPU 状态:
 
@@ -400,7 +400,7 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 ///Return to idle control flow for new scheduling
 ```
 
-### 任务调度的 idle 控制流
+## 任务调度的 idle 控制流
 
 idle 控制流,运行在每个核各自的启动栈上,从任务管理器中选一个任务在当前的 core 上面执行
 
@@ -462,7 +462,7 @@ pub fn schedule(switched_task_cx_ptr: *mut TaskContext) {
 }
 ```
 
-## 5.3
+# 5.3
 
 
 
@@ -694,7 +694,7 @@ pub fn translated_str(token: usize, ptr: *const u8) -> String {
 
 ### 系统调用后重新获取 Trap 上下文
 
-```
+```rust
 pub fn trap_handler() -> ! {
     set_kernel_trap_entry();
     let scause = scause::read();
@@ -717,5 +717,180 @@ pub fn trap_handler() -> ! {
     }
 }
 
+```
+
+----
+
+
+
+## `sys_read` 获取输入
+
+```rust
+// os/src/syscall/fs.rs
+pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
+    trace!("kernel:pid[{}] sys_read", current_task().unwrap().pid.0);
+    match fd {
+        FD_STDIN => {
+            assert_eq!(len, 1, "Only support len = 1 in sys_read!");
+            let mut c: usize;
+            loop {
+                c = console_getchar(); // 从SBI 获取字符 且每次只能读入一个字符
+                if c == 0 {
+                    suspend_current_and_run_next(); // 无输入 让出cpu
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            let ch = c as u8;
+            let mut buffers = translated_byte_buffer(current_user_token(), buf, len); //获取当前用户的token 将用户空间的 buf 指针转换为内核可安全访问的缓冲区（通过页表翻译）
+            unsafe {
+                buffers[0].as_mut_ptr().write_volatile(ch);
+            }
+            1
+        }
+        _ => {
+            panic!("Unsupported fd in sys_read!");
+        }
+    }
+}
+
+```
+
+## 进程资源回收机制
+
+退出进程
+
+`sys_exit` 系统调用主动退出，使用`exit_current_and_run_next(arg)`退出
+
+```rust
+// os/src/syscall/process.rs
+pub fn sys_exit(exit_code: i32) -> ! {
+    trace!("kernel:pid[{}] sys_exit", current_task().unwrap().pid.0);
+    exit_current_and_run_next(exit_code);
+    panic!("Unreachable in sys_exit!");
+}
+
+/// trap handler
+/// 处理来自内核的异常 中断 和 系统调用
+#[no_mangle]
+pub fn trap_handler() -> ! {
+    // trace!("into {:?}", scause.cause());
+    match scause.cause() {
+        Trap::Exception(Exception::UserEnvCall) => {}
+        //body
+        Trap::Exception(Exception::LoadPageFault) => {
+            // page fault exit code
+            exit_current_and_run_next(-2); //🔴🔴🔴🔴🔴🔴
+        }
+        Trap::Exception(Exception::IllegalInstruction) => {
+            println!("[kernel] IllegalInstruction in application, kernel killed it.");
+            // illegal instruction exit code
+            exit_current_and_run_next(-3); //🔴🔴🔴🔴🔴🔴
+        }
+    }
+}
+
+```
+
+### `exit_current_and_run_next()`的实现
+
+```rust
+// os/src/mm/memory_set.rs
+pub fn recycle_data_pages(&mut self) {
+    self.areas.clear();
+}
+
+// os/src/task/test.rs
+pub fn exit_current_and_run_next(exit_code: i32) {
+    // take from Processor
+    let task = take_current_task().unwrap();
+
+    let pid = task.getpid();
+    if pid == IDLE_PID {
+        println!("[kernel] Idle process exit with exit_code {} ...", exit_code);
+        panic!("All applications completed!");
+    }
+
+    // **** access current TCB exclusively
+    let mut inner = task.inner_exclusive_access();
+    // Change status to Zombie
+    inner.task_status = TaskStatus::Zombie; //进程控制块中的状态修改为 僵尸进程 TaskStatus::Zombie
+    // Record exit code 传入inner 的exit_code
+    inner.exit_code = exit_code;
+    // do not move to its parent but under initproc
+
+    // ++++++ access initproc TCB exclusively
+    {
+        //吧所有的子进程挂在 initproc_inner下面  也就是子进程的父进程是init_proc init_proc的子进程是他们
+        let mut initproc_inner = INITPROC.inner_exclusive_access();
+        for child in inner.children.iter() {
+            child.inner_exclusive_access().parent = Some(Arc::downgrade(&INITPROC));
+            initproc_inner.children.push(child.clone());
+        }
+    }
+    // ++++++ release parent PCB
+
+    inner.children.clear(); //当前进程的孩子向量清空。
+    // deallocate user space
+    inner.memory_set.recycle_data_pages(); //前进程占用的资源进行早期回收 清空逻辑段area
+    drop(inner);
+    // **** release current PCB
+    // drop task manually to maintain rc correctly
+    drop(task);
+    // we do not have to save task context
+    // 因为不会回到该进程 调用schedule触发调度和任务切换
+    let mut _unused = TaskContext::zero_init();
+    schedule(&mut _unused as *mut _);
+}
+
+```
+
+
+
+### 父进程回收子进程资源
+
+`sys_wait`的意义:如果当前 没有一个子进程,返回-1,否则如果没有Zombie僵尸进程返回-2，否则回收子进程和`pid`
+
+```rust
+pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
+    trace!("kernel::pid[{}] sys_waitpid [{}]", current_task().unwrap().pid.0, pid);
+    let task = current_task().unwrap();
+    // find a child process
+
+    // ---- access current PCB exclusively
+    let mut inner = task.inner_exclusive_access();
+    //检查是否存在子进程    
+    if !inner
+        .children
+        .iter()
+        .any(|p| pid == -1 || pid as usize == p.getpid())
+    {
+        return -1;
+        // ---- release current PCB
+    }
+    //获取 zombie 僵尸进程的pid
+    let pair = inner.children.iter().enumerate().find(|(_, p)| {
+        // ++++ temporarily access child PCB exclusively
+        p.inner_exclusive_access().is_zombie() && (pid == -1 || pid as usize == p.getpid())
+        // ++++ release child PCB
+    });
+    if let Some((idx, _)) = pair {
+        //把僵尸进程从 child删掉
+        let child = inner.children.remove(idx);
+        // confirm that child will be deallocated after being removed from children list
+        assert_eq!(Arc::strong_count(&child), 1); // 确保子进程资源会被回收。
+        let found_pid = child.getpid();
+        // ++++ temporarily access child PCB exclusively
+        let exit_code = child.inner_exclusive_access().exit_code;
+        // ++++ release child PCB
+        // exit_code 写入用户空间的 exit_code_ptr
+        *translated_refmut(inner.memory_set.token(), exit_code_ptr) = exit_code;
+        found_pid as isize
+    } else {
+        -2
+    }
+    // ---- release current PCB automatically
+}
 ```
 
