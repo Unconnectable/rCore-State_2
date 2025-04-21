@@ -743,7 +743,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
                 }
             }
             let ch = c as u8;
-            let mut buffers = translated_byte_buffer(current_user_token(), buf, len); //获取当前用户的token 将用户空间的 buf 指针转换为内核可安全访问的缓冲区（通过页表翻译）
+            let mut buffers = translated_byte_buffer(current_user_token(), buf, len); //获取当前用户的token 将用户空间的 buf 指针转换为内核可安全访问的缓冲区(通过页表翻译)
             unsafe {
                 buffers[0].as_mut_ptr().write_volatile(ch);
             }
@@ -761,7 +761,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
 
 退出进程
 
-`sys_exit` 系统调用主动退出，使用`exit_current_and_run_next(arg)`退出
+`sys_exit` 系统调用主动退出,使用`exit_current_and_run_next(arg)`退出
 
 ```rust
 // os/src/syscall/process.rs
@@ -831,7 +831,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     }
     // ++++++ release parent PCB
 
-    inner.children.clear(); //当前进程的孩子向量清空。
+    inner.children.clear(); //当前进程的孩子向量清空.
     // deallocate user space
     inner.memory_set.recycle_data_pages(); //前进程占用的资源进行早期回收 清空逻辑段area
     drop(inner);
@@ -850,7 +850,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
 
 ### 父进程回收子进程资源
 
-`sys_wait`的意义:如果当前 没有一个子进程,返回-1,否则如果没有Zombie僵尸进程返回-2，否则回收子进程和`pid`
+`sys_wait`的意义:如果当前 没有一个子进程,返回-1,否则如果没有Zombie僵尸进程返回-2,否则回收子进程和`pid`
 
 ```rust
 pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
@@ -879,7 +879,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         //把僵尸进程从 child删掉
         let child = inner.children.remove(idx);
         // confirm that child will be deallocated after being removed from children list
-        assert_eq!(Arc::strong_count(&child), 1); // 确保子进程资源会被回收。
+        assert_eq!(Arc::strong_count(&child), 1); // 确保子进程资源会被回收.
         let found_pid = child.getpid();
         // ++++ temporarily access child PCB exclusively
         let exit_code = child.inner_exclusive_access().exit_code;
